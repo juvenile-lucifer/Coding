@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content ="width=device-width , initial-scale=1 ,user-scalable=0" >
+	<title>2048</title>
+	<style>
+		html{font-size: 100%;}
+		body{margin:0;padding:0;}
+		.container{background:#bbada0;padding:5px;border-radius: 10px;width:60%;margin:auto;}
+		.row{display:flex;flex-direction:row;}
+		.col{display:flex;flex-direction:column;}
+		.bigBox{flex:1;width:100px;flex-shrink:1;}
+		.box{flex:1;margin:5px;height:100px;flex-shrink:1;line-height: 8rem;text-align: center;border-radius: 1rem;}
+		._0{background: #ccc0b3;font-size: 1rem;}
+		._2{background: #eee4da;font-size: 10rem;}
+		._4{background: #ede048;font-size: 10rem;}
+		._8{background: #f2b179;font-size: 10rem;}
+		._16{background: #f59563;font-size: 5rem;}
+		._32{background: #f67c5f;font-size: 5rem;}
+		._64{background: #f65e3b;font-size: 5rem;}
+		._128{background: #edcf72;font-size: 3.3rem;}
+		._256{background: #edcc60;font-size: 3.3rem;}
+		._512{background: #edc888;font-size: 3.3rem;}
+		._1024{background: #edc53f;font-size: 2.5rem;}
+		._2048{background: #edc22e;font-size: 2.5rem;}
+
+		@media all and (max-width:1024px){
+			.deskCtrl{display:none;}
+		}
+
+		.deskCtrl{position:absolute;top:100px;right:200px;width:300px;height:300px;}
+		.top{width:100px;height:100px;margin-left:100px;background:#edc53f }
+		.left{width:100px;height:100px;background:#edc22e;float:left; }
+		.right{width:100px;height:100px;float:right;background:#edc888; }
+		.bottom{width:100px;height:100px;background:#edcc60;clear:left;margin-left:100px; }
+		/*776e65 hei*/
+	</style>
+</head>
+<body>
+	<div class="container row">
+		<div class="bigBox col">
+			<div class="box"></div>
+			<div class="box"></div>
+			<div class="box"></div>
+			<div class="box"></div>
+		</div>
+		<div class="bigBox col">
+			<div class="box"></div>
+			<div class="box"></div>
+			<div class="box"></div>
+			<div class="box"></div>
+		</div>
+		<div class="bigBox col">
+			<div class="box"></div>
+			<div class="box"></div>
+			<div class="box"></div>
+			<div class="box"></div>
+		</div>
+		<div class="bigBox col">
+			<div class="box"></div>
+			<div class="box"></div>
+			<div class="box"></div>
+			<div class="box"></div>			
+		</div>
+	</div>
+	<div class="deskCtrl" id="ctr">
+		<div class="top" id="top"></div>
+		<div class="left" id="left"></div>
+		<div class="right" id="right"></div>
+		<div class="bottom" id="bottom"></div>
+	</div>
+	<script>
+	var cells =
+		(function(window,undefined){
+				var config = {
+					boxs : window.document.getElementsByClassName('box'),
+					line : 4,
+					list :4,
+				};
+				var WYserver = (function(){
+					var convertA = function(a){
+						var h =[];
+						var removeZero = function(b){
+							var newB =[];
+							for(i = 0 , j = b.length ; i < j ; i++){
+								if(b[i]){
+									newB.push(b[i]);
+								}
+							}
+							return newB;
+						}
+						var com = function(b){
+							var a =removeZero(b) ;
+							if( a[1]){
+								if(a[0] === a[1]){
+									h.push(a[0] + a[1]);
+									a[0] = 0;
+									a[1] = 0;
+									com( a );
+								}else{
+									h.push(a[0]);
+									a[0] = 0;
+									com( a );
+								}
+							}else if(a[0]){
+								h.push(a[0]);
+							}
+						}
+						com(a);
+						return h;
+					}
+					return {
+						convertA : convertA ,
+					}
+				})();
+
+				var cells =[];
+				cells.init = function(){
+					this.row = [];
+					this.col = [];
+					var that = this;
+					var WYinit = function(){
+						for(var ib = 0 , jb = config.boxs.length ; ib < jb ; ib++){
+							that.push(new Cell(config.boxs[ib] , ib , 0 , 0 ));
+						}
+						for(var i = 0 , j = config.list ; i<j ; i++){
+							that.row.push(new Row(that , i+1));
+						}
+						for(var ii = 0 , jj = config.line ; ii<jj ; ii++){
+							that.col.push(new Col(that , ii+1));
+						}
+						console.log(that.col);
+					}
+					WYinit();
+				}
+				cells.left = function(){
+					for(var i = 0 , j = this.row.length ; i < j ; i++){
+						this.row[i].toLeft();
+					}
+				}
+				cells.right = function(){
+					for(var i = 0 , j = this.row.length ; i < j ; i++){
+						this.row[i].toRight();
+					}
+				}
+				cells.up = function(){
+					for(var i = 0 , j = this.col.length ; i < j ; i++){
+						this.col[i].toTop();
+					}
+				}
+				cells.down = function(){
+					for(var i = 0 , j = this.col.length ; i < j ; i++){
+						this.col[i].toBottom();
+					}
+				}
+				cells.updateView = function(before , after){
+					if(before){
+						before();
+					}
+					for(var i = 0 , j = this.length ; i < j ; i++){
+						cells[i].update();
+					}
+					if(after){
+						after();
+					}
+				}
+				function Cell(a,b){
+					this.box = a;
+					this.index = b;
+					this.oldValue = arguments[2] ? arguments[2] : 0;
+					this.newValue = arguments[3] ? arguments[3] : 0;
+					this.posX = Math.floor(this.index / config.line) + 1;
+					this.posY = this.index % config.line + 1;
+				}
+
+				Cell.prototype.update = function(){
+					var value = this.newValue === 0 ? '' : this.newValue;
+					this.box.innerHTML = value + '';
+					this.box.className = this.box.className.split(' ')[0] + ' _'+ this.newValue;
+				}
+
+				function Row(cells , a){
+					this.row = undefined;
+					this.rowCells = [];
+					that = this;
+					var init = function(){
+						that.row = a;
+						for(var i = 0 , j = config.list ; i < j ; i++ ){
+							var firstRowCellIndex = (a-1);
+							that.rowCells.push(cells[firstRowCellIndex + config.line*i]);
+						}
+					}
+					init();
+				}
+				Row.prototype.toLeft = function(){
+					var a = this.rowCells , newValues = [];
+					for(var i =0 ,l = a.length ; i < l ; i++ ){
+						newValues.push(a[i].newValue);
+					}
+					console.log(newValues);
+					var converted = WYserver.convertA(newValues);
+					console.log(converted);
+					for(var ii = 0 , ll = a.length ; ii < ll ; ii++){
+						if(converted[ii]){
+							a[ii].newValue = converted[ii];
+						}else{
+							a[ii].newValue = 0;
+						}
+					}
+					console.log(a);
+				}
+				Row.prototype.toRight = function(){
+					var a = this.rowCells , newValues = [];
+					for(var i = a.length - 1 ; i >= 0 ; i-- ){
+						newValues.push(a[i].newValue);
+					}
+					console.log(newValues);
+					var converted = WYserver.convertA(newValues);
+					console.log(converted);
+					for(var ii = 0 , ll = a.length ; ii < ll ; ii++){
+						if(converted[ii]){
+							a[ll - ii - 1].newValue = converted[ii];
+						}else{
+							a[ll - ii - 1].newValue = 0;
+						}
+					}
+					console.log(a);
+				}
+				function Col(cells , a){
+					this.col = undefined;
+					this.colCells = [];
+					that = this;
+					var init = function(){
+						that.col = a;
+						for(var i = 0 , j = config.line ; i < j ; i++ ){
+							var firstColCellIndex = (a-1)*j;
+							that.colCells.push(cells[firstColCellIndex + i]);
+						}
+					}
+					init();
+				}
+				Col.prototype.toTop = function(){
+					var a = this.colCells , newValues = [];
+					for(var i =0 ,l = a.length ; i < l ; i++ ){
+						newValues.push(a[i].newValue);
+					}
+					console.log(newValues);
+					var converted = WYserver.convertA(newValues);
+					console.log(converted);
+					for(var ii = 0 , ll = a.length ; ii < ll ; ii++){
+						if(converted[ii]){
+							a[ii].newValue = converted[ii];
+						}else{
+							a[ii].newValue = 0;
+						}
+					}
+					console.log(a);
+				}
+				Col.prototype.toBottom = function(){
+					var a = this.colCells , newValues = [];
+					for(var i =0 ,l = a.length ; i < l ; i++ ){
+						newValues.push(a[i].newValue);
+					}
+					console.log(newValues);
+					var converted = WYserver.convertA(newValues);
+					console.log(converted);
+					for(var ii = 0 , ll = a.length ; ii < ll ; ii++){
+						if(converted[ii]){
+							a[ll - ii -1 ].newValue = converted[ii];
+						}else{
+							a[ll -ii -1 ].newValue = 0;
+						}
+					}
+					console.log(a);
+				}
+				return cells;
+		})(window,undefined);
+		(function(window,undefined,cells){
+			cells.init();
+			cells.updateView();
+			var ctr = window.document.getElementById('ctr');
+			ctr.addEventListener('click',(function(cells){return signal;})(cells) );
+			function choseBox(){
+					var emptyCell = [];
+					for(var i = 0 , j = cells.length ; i < j ;i++){
+						if(!cells[i].newValue){
+							emptyCell.push(cells[i]);
+						}
+					}
+					var chosedNum = Math.floor(Math.random()*emptyCell.length);
+					emptyCell[chosedNum].newValue = 2;
+				}
+			function signal(event){
+				var tarId = event.target.id;
+				if(tarId ==='top'){
+					cells.up();
+				}else if(tarId === 'left'){
+					cells.left();
+				}else if(tarId === 'right'){
+					cells.right();
+				}else if(tarId === 'bottom'){
+					cells.down();
+				}
+				cells.updateView(choseBox);
+			}
+		})(window , undefined , cells)
+	</script>
+	<script>
+	var con = document.getElementsByClassName('container')[0];
+	var wid = con.offsetWidth;
+	var bC = con.getElementsByClassName('box');
+	bC[0].innerHTML = wid;
+	con.style="height : "+wid+'px';
+	var hei = con.offsetHeight;
+	bC[1].innerHTML = hei;
+	console.log(wid);
+/**********************************************
+			test core function
+**************************************************
+		(function(window,undefined){
+			function testFunction(testA){
+				var h = [];
+				var removeZero = function(b){
+					var newB =[];
+					for(i = 0 , j = b.length ; i < j ; i++){
+						if(b[i]){
+							newB.push(b[i]);
+						}
+					}
+					return newB;
+				}
+				var com = function(b){
+					var a =removeZero(b);
+					if( a[1]){
+						if(a[0] === a[1]){
+							h.push(a[0] + a[1]);
+							a[0] = 0;
+							a[1] = 0;
+							com( removeZero( a ) );
+						}else{
+							h.push(a[0]);
+							a[0] = 0;
+							com( removeZero( a ) );
+						}
+					}else if(a[0]){
+						h.push(a[0]);
+					}
+				}
+				com(testA);
+				return h;
+			}	
+
+			var test = function(){
+				var a =[0,2,4,8] , l = a.length ,b = [],p=0 ;
+				for(var q = 0 ;q<l ; q++){
+					b[0] = a[q];
+					for(var w = 0 ;w<l ; w++){
+						b[1] = a[w];
+						for(var e = 0 ;e<l ; e++){
+							b[2] = a[e];
+							for(var r = 0 ;r<l ; r++){
+								b[3] = a[r];
+								console.log('这是第'+p+'个数组');
+								console.log(b);
+								console.log(testFunction(b))
+								p++;
+							}
+						}
+					}
+				}
+			}
+			test();
+		})()
+****************************************************/
+	</script>
+
+</body>
+</html>
